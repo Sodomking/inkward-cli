@@ -1,0 +1,10 @@
+{
+  "name": "inkward-cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "INKWARD website launcher and machine-readable introduction",
+  "bin": { "inkward": "inkward.cjs" },
+  "scripts": { "test": "node --test cli.test.cjs", "build": "node build.cjs" },
+  "engines": { "node": ">=22.16" },
+  "devDependencies": { "postject": "1.0.0-alpha.6" }
+}
