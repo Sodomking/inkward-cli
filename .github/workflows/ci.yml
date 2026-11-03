@@ -1,0 +1,27 @@
+name: CLI checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build and smoke-test standalone executable
+        run: npm run build
+        env:
+          INKWARD_SITE_URL: https://example.invalid
+      # This build tests packaging only. It is never released to users.
