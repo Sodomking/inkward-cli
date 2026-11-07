@@ -1,10 +1,10 @@
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const site=process.env.INKWARD_SITE_URL;
-if(!site)throw new Error('Set INKWARD_SITE_URL to the deployed production origin first.');
+
 require('./inkward.cjs').website({site});
 fs.mkdirSync('release',{recursive:true});
-const source=fs.readFileSync('inkward.cjs','utf8').replace('const RELEASE_SITE = null;',`const RELEASE_SITE = ${JSON.stringify(site)};`)
-  .replace('if(require.main===module)main()', 'main()').replace('module.exports={options,website,main};','');
+const source=fs.readFileSync('inkward.cjs','utf8').replace(/const RELEASE_SITE = [^;]+;/,`const RELEASE_SITE = ${JSON.stringify(site||'https://rimbaud.asia/writing/')};`)
+  .replace('if(require.main===module)main()', 'main()').replace(/module.exports=\{[^;]+;/,'');
 fs.writeFileSync('release/entry.cjs',source);
 fs.writeFileSync('release/sea.json',JSON.stringify({main:'release/entry.cjs',output:'release/sea.blob',disableExperimentalSEAWarning:true,useSnapshot:false,useCodeCache:false}));
 execFileSync(process.execPath,['--experimental-sea-config','release/sea.json'],{stdio:'inherit'});
