@@ -4,3 +4,5 @@ release/
 *.pem
 *.key
 .DS_Store
+
+native/inkward-test*

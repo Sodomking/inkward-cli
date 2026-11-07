@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -14,14 +15,29 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: native/go.sum
+      - name: Native tests (fixtures only; no proxy changes)
+        working-directory: native
+        run: go test -v ./...
+      - name: Build and smoke native executable
+        shell: bash
+        working-directory: native
+        run: |
+          go build -trimpath -buildvcs=false -ldflags='-s -w' -o inkward-test.exe .
+          ./inkward-test.exe version
+          ./inkward-test.exe info --json
+      - name: macOS bootstrap architecture detection (no downloads or settings)
+        if: runner.os == 'macOS'
+        run: sh start.sh --plan
+      - name: Windows bootstrap architecture detection (no downloads or settings)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\start.ps1 -Plan
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - name: Build and smoke-test standalone executable
-        run: npm run build
-        env:
-          INKWARD_SITE_URL: https://example.invalid
-      # This build tests packaging only. It is never released to users.
+      - name: Legacy Node CLI compatibility
+        run: node --test cli.test.cjs

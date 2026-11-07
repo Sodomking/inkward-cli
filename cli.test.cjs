@@ -70,12 +70,12 @@ test('setup runs diagnostics then requests correct browser URL; no login success
 test('no-Node starter matches CLI exam and trial destinations',()=>{
  const {execFileSync}=require('node:child_process');
  for(const exam of ['','english1','english2','cet4','cet6','ielts','ielts-general']){
-  const args=process.platform==='win32'?['-NoProfile','-File',path.join(__dirname,'start.ps1'),'-PrintUrl',...(exam?['-Exam',exam]:[])]:[path.join(__dirname,'start.sh'),'--print-url',...(exam?['--exam',exam]:[])];
+  const args=process.platform==='win32'?['-NoProfile','-File',path.join(__dirname,'open-only.ps1'),'-PrintUrl',...(exam?['-Exam',exam]:[])]:[path.join(__dirname,'open-only.sh'),'--print-url',...(exam?['--exam',exam]:[])];
   const actual=execFileSync(process.platform==='win32'?'powershell.exe':'sh',args,{encoding:'utf8'}).trim();
   assert.equal(actual,website(options(['open',...(exam?['--exam',exam]:[])])));
  }
  for(const exam of ['english1','postgraduate'])for(const trial of ['big','small']){
-  const args=process.platform==='win32'?['-NoProfile','-File',path.join(__dirname,'start.ps1'),'-PrintUrl','-Exam',exam,'-Trial',trial]:[path.join(__dirname,'start.sh'),'--print-url','--exam',exam,'--trial',trial];
+  const args=process.platform==='win32'?['-NoProfile','-File',path.join(__dirname,'open-only.ps1'),'-PrintUrl','-Exam',exam,'-Trial',trial]:[path.join(__dirname,'open-only.sh'),'--print-url','--exam',exam,'--trial',trial];
   assert.equal(execFileSync(process.platform==='win32'?'powershell.exe':'sh',args,{encoding:'utf8'}).trim(),website({exam,trial}));
  }
 });
