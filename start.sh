@@ -29,8 +29,39 @@ dest="$HOME/Library/Application Support/INKWARD/bin/$version"
 mkdir -p "$dest"
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/inkward-download.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-fetch() { curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --max-time 120 --retry 2 "$1" -o "$2"; }
-fetch "$base/SHA256SUMS" "$tmp/SHA256SUMS"
+fetch() { curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --max-time 120 --retry 1 "$1" -o "$2"; }
+mirror='https://static.rimbaud.asia/releases/eb87c3e97e94dbcb/cli/v2.0.0'
+api_asset=''; api_sums=''; api_loaded=0
+load_api() {
+  [ "$api_loaded" = 0 ] || return 0
+  api_loaded=1
+  if fetch "https://api.github.com/repos/Sodomking/inkward-cli/releases/tags/v$version" "$tmp/release.json"; then
+    i=0
+    while [ "$i" -lt 20 ]; do
+      name=$(/usr/bin/plutil -extract "assets.$i.name" raw -o - "$tmp/release.json" 2>/dev/null) || break
+      if [ "$name" = "$asset" ] || [ "$name" = SHA256SUMS ]; then
+        endpoint=$(/usr/bin/plutil -extract "assets.$i.url" raw -o - "$tmp/release.json")
+        id=${endpoint#https://api.github.com/repos/Sodomking/inkward-cli/releases/assets/}
+        case "$id" in ''|*[!0-9]*) echo 'Invalid official asset endpoint' >&2; exit 1;; esac
+        if [ "$name" = "$asset" ]; then api_asset="$endpoint"; else api_sums="$endpoint"; fi
+      fi
+      i=$((i + 1))
+    done
+  fi
+}
+fetch_asset() {
+  wanted="$1"; target="$2"
+  # Only this site's request bypasses terminal proxy variables. System VPN/TUN may still apply.
+  if curl --noproxy '.rimbaud.asia' --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 8 --max-time 90 --retry 1 "$mirror/$wanted" -o "$target"; then return 0; fi
+  load_api
+  if [ "$wanted" = SHA256SUMS ]; then endpoint="$api_sums"; else endpoint="$api_asset"; fi
+  if [ -n "$endpoint" ]; then
+    if curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --max-time 120 --retry 1 -H 'Accept: application/octet-stream' "$endpoint" -o "$target"; then return 0; fi
+  fi
+  fetch "$base/$wanted" "$target"
+}
+fetch_asset SHA256SUMS "$tmp/SHA256SUMS"
+[ "$(shasum -a 256 "$tmp/SHA256SUMS" | awk '{print $1}')" = 'eb87c3e97e94dbcb3e11d3efbb62e027354af024a90b69280fa6c6cb42eaa0d5' ] || { echo 'Release manifest mismatch' >&2; exit 1; }
 expected=$(awk -v f="$asset" '$2==f {print $1}' "$tmp/SHA256SUMS")
 [ "${#expected}" = 64 ] || { echo 'Missing or invalid checksum' >&2; exit 1; }
 case "$expected" in *[!0-9a-f]*) echo 'Invalid checksum' >&2; exit 1;; esac
@@ -38,7 +69,7 @@ binary="$dest/inkward"
 actual=''
 if [ -f "$binary" ] && [ ! -L "$binary" ]; then actual=$(shasum -a 256 "$binary" | awk '{print $1}'); fi
 if [ "$actual" != "$expected" ]; then
-  fetch "$base/$asset" "$tmp/inkward"
+  fetch_asset "$asset" "$tmp/inkward"
   actual=$(shasum -a 256 "$tmp/inkward" | awk '{print $1}')
   [ "$actual" = "$expected" ] || { echo 'Checksum mismatch; not executed' >&2; exit 1; }
   chmod 700 "$tmp/inkward"

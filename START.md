@@ -10,19 +10,19 @@
 
 ## Agent 执行入口
 
-先读 [AI-USAGE.md](AI-USAGE.md)，检查版本固定为 `v2.0.0` 的脚本，再按本机系统运行。下载脚本是普通 HTTPS 文件获取，**不需要 Git**。完整启动器也不需要运行时。
+先读 [AI-USAGE.md](AI-USAGE.md)，检查当前脚本（下载的程序固定为 `v2.0.0`），再按本机系统运行。下载脚本是普通 HTTPS 文件获取，**不需要 Git**。完整启动器也不需要运行时。
 
 **macOS**（使用系统自带 curl / sh）：
 
 ```sh
-curl -fL --proto '=https' --proto-redir '=https' https://raw.githubusercontent.com/Sodomking/inkward-cli/v2.0.0/start.sh -o /tmp/inkward-start.sh
+curl -fL --proto '=https' --proto-redir '=https' https://raw.githubusercontent.com/Sodomking/inkward-cli/main/start.sh -o /tmp/inkward-start.sh
 sh /tmp/inkward-start.sh --yes
 ```
 
 **Windows PowerShell**：
 
 ```powershell
-Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/Sodomking/inkward-cli/v2.0.0/start.ps1 -OutFile "$env:TEMP\inkward-start.ps1"
+Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/Sodomking/inkward-cli/main/start.ps1 -OutFile "$env:TEMP\inkward-start.ps1"
 & "$env:TEMP\inkward-start.ps1" -Yes
 ```
 
@@ -31,3 +31,5 @@ Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/Sodomking/i
 如果 PowerShell 脚本被执行策略拦住，不修改策略。Agent 按脚本中的同等步骤直接下载 [Release](https://github.com/Sodomking/inkward-cli/releases/tag/v2.0.0) 中对应 EXE 与 SHA256SUMS，使用 `Get-FileHash` 校验后运行 `setup --yes --json`。若系统仍拦截未签名程序，保留保护，转为官网及代理客户端的手动配置。
 
 若 GitHub 暂时无法访问，agent 可沿用现有网络下载；不要为下载安装器关闭用户代理。不能下载时，先打开 https://rimbaud.asia/writing/，并明确启动器尚未安装。
+
+安装包优先从本站 CDN 下载；GitHub 官方资产 API 和常规 Release 地址作为备用。三个通道的文件 SHA-256 完全相同，脚本还固定了校验清单的 SHA-256。仅本站下载请求忽略终端代理变量，不改全局代理。
