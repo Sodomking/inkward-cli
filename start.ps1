@@ -5,7 +5,7 @@ param(
   [ValidateSet('', 'big', 'small')][string]$Trial = ''
 )
 $ErrorActionPreference = 'Stop'
-$version = '2.0.0'
+$version = '2.0.1'
 if ($Trial -and $Exam -notin @('', 'english1', 'english2', 'postgraduate')) { throw 'Trial requires English I or II' }
 $machine = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
 # Read native architecture even when the agent uses an emulated x64 process.
@@ -15,7 +15,7 @@ $arch = switch ($machine.ToUpperInvariant()) { 'AMD64' { 'amd64' }; 'ARM64' { 'a
 $asset = "inkward-windows-$arch.exe"
 $base = "https://github.com/Sodomking/inkward-cli/releases/download/v$version"
 if ($Plan) { @{ version = $version; os = 'windows'; arch = $arch; asset = $asset; url = "$base/$asset" } | ConvertTo-Json -Compress; exit 0 }
-if (-not $Yes -and (Read-Host 'Configure INKWARD direct access and open the website? [y/N]') -notmatch '^(y|yes)$') { exit 1 }
+if (-not $Yes -and (Read-Host 'Set up INKWARD and open the website (company services included on first use)? [y/N]') -notmatch '^(y|yes)$') { exit 1 }
 $dest = Join-Path $env:LOCALAPPDATA "INKWARD\bin\$version"
 if ((Test-Path $dest) -and ((Get-Item $dest).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Install directory must not be a link' }
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
@@ -30,7 +30,7 @@ try {
     # The direct exception is scoped to this single first-party request.
     $response = $null; $stream = $null; $file = $null
     try {
-      $request = [Net.HttpWebRequest]::Create("https://static.rimbaud.asia/releases/eb87c3e97e94dbcb/cli/v2.0.0/$Name")
+      $request = [Net.HttpWebRequest]::Create("https://static.rimbaud.asia/releases/7e2d2c0ee1641998/cli/v2.0.1/$Name")
       $request.Proxy = $null; $request.Timeout = 15000; $request.ReadWriteTimeout = 30000; $request.AllowAutoRedirect = $false
       $response = $request.GetResponse()
       if ([int]$response.StatusCode -ne 200) { throw 'Unexpected CDN response' }
@@ -65,7 +65,7 @@ try {
   }
   $manifest = Join-Path $temp 'SHA256SUMS'
   Get-ReleaseAsset 'SHA256SUMS' $manifest
-  if ((Get-FileHash $manifest -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'eb87c3e97e94dbcb3e11d3efbb62e027354af024a90b69280fa6c6cb42eaa0d5') { throw 'Release manifest mismatch' }
+  if ((Get-FileHash $manifest -Algorithm SHA256).Hash.ToLowerInvariant() -ne '7e2d2c0ee16419982b229755d74339bb36d22dc81cdaac5558376e6f772e527c') { throw 'Release manifest mismatch' }
   $matchesFound = @(Get-Content $manifest | Where-Object { $_ -match ('^[a-f0-9]{64}  ' + [regex]::Escape($asset) + '$') })
   if ($matchesFound.Count -ne 1) { throw 'Missing or invalid checksum' }
   $expected = $matchesFound[0].Substring(0,64)

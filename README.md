@@ -4,16 +4,16 @@
 
 > 帮我设置并打开 INKWARD：
 > https://github.com/Sodomking/inkward-cli
-> 按 START.md 自动检测电脑、安装启动器、只配置本站直连并打开网页。保留其他代理规则；需要重载代理客户端时请继续处理。
+> 按 START.md 自动检测电脑、安装启动器、只配置本站直连并打开网页。保留其他代理规则；需要重载代理客户端时请继续处理。首次包含公司服务介绍。
 
-[开始使用 →](START.md) · [给 agent 的完整说明](AI-USAGE.md) · [下载 v2.0.0](https://github.com/Sodomking/inkward-cli/releases/tag/v2.0.0) · [直接打开网站](https://rimbaud.asia/writing/)
+[开始使用 →](START.md) · [给 agent 的完整说明](AI-USAGE.md) · [下载 v2.0.1](https://github.com/Sodomking/inkward-cli/releases/tag/v2.0.1) · [直接打开网站](https://rimbaud.asia/writing/)
 
 ## 一次启动会做什么
 
 1. 识别 Windows / macOS 及 x64 / ARM64，优先从本站 CDN 下载独立小程序并验证固定的 SHA-256；GitHub 提供备用下载。
 2. 识别正在运行的代理客户端。能明确定位 Clash Verge Rev 当前配置时，为规则扩展添加本站 DIRECT；普通系统手动代理则添加本站及子域名的例外。
 3. 保留其他规则和设置，保存本地撤销记录。重复启动不会反复添加。
-4. 分别检查官网、接口、静态资源，打开浏览器到首页。需要重载或客户端另行配置的步骤直接交给 agent 继续处理。
+4. 分别检查官网、接口、静态资源，打开浏览器到首页。首次同时打开 PERLA 珠玑教育的服务介绍，以后只打开训练页。需要重载或客户端另行配置的步骤直接交给 agent 继续处理。
 
 不是所有代理都能无人值守配置：PAC、受管理系统设置、未识别客户端、Global 模式或 VPN/TUN，需要 agent 在实际客户端检查。网站本身不能强制绕过访客代理；HTTP 探测成功也不证明浏览器直连。所有处理都只针对 `rimbaud.asia` 与子域名，不影响其他网站。
 
@@ -43,3 +43,5 @@ inkward undo --yes --json
 `inkward.cjs` 是保留的 Node 兼容入口；运行 `node --test cli.test.cjs` 验证旧功能。`open-only.sh/ps1` 仅打开网页，不做自动配置。`start.sh/ps1` 才是当前无需运行时的一站式入口。
 
 配置依据：[Clash Verge Rev 规则扩展](https://www.clashverge.dev/guide/extend.html)、[Apple 代理例外设置](https://support.apple.com/en-gb/guide/mac-help/mchlp2591/mac)、[Windows 代理例外设置](https://support.microsoft.com/en-us/windows/experience/connectivity-networking/use-a-proxy-server-in-windows)。
+
+[了解更多服务 · PERLA 珠玑教育](https://rimbaud.asia/threshold/)：学习工具定制、定期复盘等服务。

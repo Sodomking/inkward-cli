@@ -45,7 +45,7 @@ jobs:
           result=$?
           set -e
           if [ "$result" != 0 ] && [ "$result" != 2 ]; then exit "$result"; fi
-          python3 -c 'import json; r=json.load(open("bootstrap-report.json")); assert r["version"]=="2.0.0" and r["os"]=="darwin" and not r["browserRequested"]'
+          python3 -c 'import json; r=json.load(open("bootstrap-report.json")); assert r["version"]=="2.0.1" and r["os"]=="darwin" and not r["browserRequested"] and not r["companyIntroRequested"]'
       - name: Windows download, checksum and read-only setup
         if: runner.os == 'Windows'
         shell: powershell
@@ -53,7 +53,7 @@ jobs:
           & .\start.ps1 -Yes -DryRun -NoOpen > bootstrap-report.json
           if ($LASTEXITCODE -notin @(0,2)) { throw 'Native setup failed' }
           $report = Get-Content bootstrap-report.json -Raw | ConvertFrom-Json
-          if ($report.version -ne '2.0.0' -or $report.os -ne 'windows' -or $report.browserRequested) { throw 'Unexpected setup report' }
+          if ($report.version -ne '2.0.1' -or $report.os -ne 'windows' -or $report.browserRequested -or $report.companyIntroRequested) { throw 'Unexpected setup report' }
           exit 0
       - uses: actions/setup-node@v4
         with:

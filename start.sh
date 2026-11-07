@@ -1,7 +1,7 @@
 #!/bin/sh
 # INKWARD native bootstrap. Inspect before running. No Node, Git, Go or sudo.
 set -eu
-version='2.0.0'
+version='2.0.1'
 yes=0; plan=0; dry=0; no_open=0; exam=''; trial=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -22,7 +22,7 @@ case "$arch" in arm64) arch=arm64;; x86_64) arch=amd64;; *) echo 'Unsupported Ma
 asset="inkward-darwin-$arch"
 base="https://github.com/Sodomking/inkward-cli/releases/download/v$version"
 if [ "$plan" = 1 ]; then printf '{"version":"%s","os":"darwin","arch":"%s","asset":"%s","url":"%s/%s"}\n' "$version" "$arch" "$asset" "$base" "$asset"; exit 0; fi
-if [ "$yes" = 0 ]; then printf 'Configure INKWARD direct access and open the website? [y/N] '; read -r answer; case "$answer" in y|Y|yes|YES) :;; *) exit 1;; esac; fi
+if [ "$yes" = 0 ]; then printf 'Set up INKWARD and open the website (company services included on first use)? [y/N] '; read -r answer; case "$answer" in y|Y|yes|YES) :;; *) exit 1;; esac; fi
 umask 077
 dest="$HOME/Library/Application Support/INKWARD/bin/$version"
 [ ! -L "$dest" ] || { echo 'Install directory must not be a symlink' >&2; exit 1; }
@@ -30,7 +30,7 @@ mkdir -p "$dest"
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/inkward-download.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 fetch() { curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --max-time 120 --retry 1 "$1" -o "$2"; }
-mirror='https://static.rimbaud.asia/releases/eb87c3e97e94dbcb/cli/v2.0.0'
+mirror='https://static.rimbaud.asia/releases/7e2d2c0ee1641998/cli/v2.0.1'
 api_asset=''; api_sums=''; api_loaded=0
 load_api() {
   [ "$api_loaded" = 0 ] || return 0
@@ -61,7 +61,7 @@ fetch_asset() {
   fetch "$base/$wanted" "$target"
 }
 fetch_asset SHA256SUMS "$tmp/SHA256SUMS"
-[ "$(shasum -a 256 "$tmp/SHA256SUMS" | awk '{print $1}')" = 'eb87c3e97e94dbcb3e11d3efbb62e027354af024a90b69280fa6c6cb42eaa0d5' ] || { echo 'Release manifest mismatch' >&2; exit 1; }
+[ "$(shasum -a 256 "$tmp/SHA256SUMS" | awk '{print $1}')" = '7e2d2c0ee16419982b229755d74339bb36d22dc81cdaac5558376e6f772e527c' ] || { echo 'Release manifest mismatch' >&2; exit 1; }
 expected=$(awk -v f="$asset" '$2==f {print $1}' "$tmp/SHA256SUMS")
 [ "${#expected}" = 64 ] || { echo 'Missing or invalid checksum' >&2; exit 1; }
 case "$expected" in *[!0-9a-f]*) echo 'Invalid checksum' >&2; exit 1;; esac

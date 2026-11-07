@@ -1,10 +1,8 @@
-Windows / macOS 原生启动器，不需要预装 Node、Git 或 Go。
+首次使用时同时打开 INKWARD 训练页和 PERLA 珠玑教育的服务介绍，文案为“了解更多服务”。
 
-- `start.sh` / `start.ps1` 自动选择 x64/ARM64、下载并核验 SHA-256，然后执行集成 setup。
-- 自动检测环境与代理；可明确识别的 Clash Verge Rev 当前规则扩展、系统手动代理例外支持本站直连与撤销。
-- 自动检查官网/API/CDN、打开浏览器；需重载或未支持的客户端向 agent 输出明确下一步。
-- 所有规则仅涉及 rimbaud.asia 及子域名，保留原有规则。不会关闭全局代理或修改系统安全策略。
+- 每个系统账号仅介绍一次；换考试或更新版本不会重复打开。
+- 只读检查、预览和 `--no-open` 保持不打开网页，不消耗首次状态。
+- 公司介绍打开失败不会阻止训练页；报告分别标明两页的启动请求。
+- Windows / macOS 无需 Node、Git 或 Go，仍使用本站 CDN、固定 SHA-256 校验与 GitHub 备用下载。
 
-从仓库 START.md 开始。文件 SHA256SUMS 用于下载校验。当前未提供 Apple 公证或 Windows Authenticode 签名；系统阻止执行时保留系统保护，按 AI-USAGE.md 的客户端/UI 路径处理。
-
-自动检查覆盖 Windows/macOS/Linux 上的本机运行、隔离配置样本、重复运行、备份/撤销和旧 CLI 兼容。Windows ARM64、Intel Mac 产物由 Go 交叉构建；不把交叉构建声称为所有真实代理/VPN组合的验证。
+从仓库主线 START.md 开始。使用本地记录，不上传营销访问记录，不自动登录或接受任何服务条款。当前原生程序未做 Apple 公证或 Windows Authenticode 签名，保持系统安全保护。

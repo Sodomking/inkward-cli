@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-const version = "2.0.0"
+const version = "2.0.1"
 const website = "https://rimbaud.asia/writing/"
 const directRule = "DOMAIN-SUFFIX,rimbaud.asia,DIRECT"
 const marker = "INKWARD direct rule v2"
@@ -30,16 +30,18 @@ type Step struct {
 	File   string `json:"file,omitempty"`
 }
 type Report struct {
-	Version              string   `json:"version"`
-	OS                   string   `json:"os"`
-	Arch                 string   `json:"arch"`
-	Website              string   `json:"website"`
-	Steps                []Step   `json:"steps"`
-	BrowserRequested     bool     `json:"browserRequested"`
-	BrowserRouteVerified bool     `json:"browserRouteVerified"`
-	NeedsAgent           bool     `json:"needsAgent"`
-	Next                 []string `json:"nextActions,omitempty"`
-	StateFile            string   `json:"stateFile,omitempty"`
+	Version               string   `json:"version"`
+	OS                    string   `json:"os"`
+	Arch                  string   `json:"arch"`
+	Website               string   `json:"website"`
+	Steps                 []Step   `json:"steps"`
+	MoreServicesURL       string   `json:"moreServicesUrl"`
+	CompanyIntroRequested bool     `json:"companyIntroRequested"`
+	BrowserRequested      bool     `json:"browserRequested"`
+	BrowserRouteVerified  bool     `json:"browserRouteVerified"`
+	NeedsAgent            bool     `json:"needsAgent"`
+	Next                  []string `json:"nextActions,omitempty"`
+	StateFile             string   `json:"stateFile,omitempty"`
 }
 type Options struct {
 	Command                   string
@@ -154,12 +156,12 @@ func confirmed(o Options) bool {
 	if o.Yes {
 		return true
 	}
-	prompt := "将为本站添加直连例外（保留其他设置），并打开官网。"
+	prompt := "将为本站添加直连例外（保留其他设置），并打开官网。首次还会打开 PERLA 珠玑教育的服务介绍。"
 	if o.Command == "undo" {
 		prompt = "将撤销本工具添加的本站直连例外。"
 	}
 	if o.Command == "open" {
-		prompt = "将在默认浏览器打开官网。"
+		prompt = "将在默认浏览器打开官网，首次同时打开 PERLA 珠玑教育的服务介绍。"
 	}
 	fmt.Fprint(os.Stderr, prompt+"继续？[y/N] ")
 	s, _ := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -248,7 +250,7 @@ func runMain(args []string) int {
 		return 0
 	}
 	url, _ := destination(o)
-	r := Report{Version: version, OS: runtime.GOOS, Arch: runtime.GOARCH, Website: url, Steps: []Step{}}
+	r := Report{Version: version, OS: runtime.GOOS, Arch: runtime.GOARCH, Website: url, MoreServicesURL: companyURL, Steps: []Step{}}
 	if o.Command == "info" {
 		jsonPrint(r)
 		return 0
@@ -282,6 +284,11 @@ func runMain(args []string) int {
 		r.Steps = configure(dir, apply, command)
 		r.Steps = append(r.Steps, checks()...)
 	}
+	if wantsBrowser(o) {
+		var opened []Step
+		r.BrowserRequested, r.CompanyIntroRequested, opened = launchPages(url, dir, func(target string) error { return openBrowser(target, command) })
+		r.Steps = append(r.Steps, opened...)
+	}
 	for _, s := range r.Steps {
 		switch s.Status {
 		case "needs-reload", "needs-agent", "permission-required", "unavailable", "error", "changed-config", "unexpected-response":
@@ -289,15 +296,6 @@ func runMain(args []string) int {
 			if s.Detail != "" {
 				r.Next = append(r.Next, s.Detail)
 			}
-		}
-	}
-	if !o.NoOpen && !o.DryRun && (o.Command == "setup" || o.Command == "open") {
-		if e := openBrowser(url, command); e != nil {
-			r.Steps = append(r.Steps, Step{Name: "打开网页", Status: "needs-agent", Detail: "请在默认浏览器打开 " + url})
-			r.NeedsAgent = true
-			r.Next = append(r.Next, "请在默认浏览器打开 "+url)
-		} else {
-			r.BrowserRequested = true
 		}
 	}
 	// A successful HTTP probe does not establish routing through a browser or TUN.
